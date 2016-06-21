@@ -4,6 +4,7 @@ namespace FS\SolrBundle\Doctrine\Annotation;
 
 use Doctrine\Common\Annotations\Annotation;
 use Doctrine\Common\Annotations\AnnotationReader as Reader;
+use FS\SolrBundle\Doctrine\Annotation\Field;
 
 class AnnotationReader
 {
@@ -38,17 +39,20 @@ class AnnotationReader
 
         $fields = array();
         foreach ($properties as $property) {
-            $annotation = $this->reader->getPropertyAnnotation($property, $type);
+            $annotations = $this->reader->getPropertyAnnotations($property, $type);
+            foreach ($annotations as $annotation) {
+                if (!$annotation instanceof $type) {
+                    continue;
+                }
 
-            if (null === $annotation) {
-                continue;
+                $property->setAccessible(true);
+                $annotation->value = $property->getValue($entity);
+                if (!isset($annotation->name)) {
+                    $annotation->name = $property->getName();
+                }
+
+                $fields[] = $annotation;
             }
-
-            $property->setAccessible(true);
-            $annotation->value = $property->getValue($entity);
-            $annotation->name = $property->getName();
-
-            $fields[] = $annotation;
         }
 
         return $fields;
