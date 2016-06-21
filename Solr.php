@@ -3,11 +3,10 @@
 namespace FS\SolrBundle;
 
 use FS\SolrBundle\Client\Solarium\SolariumClient;
-use FS\SolrBundle\Doctrine\Mapper\MetaInformationInterface;
-use Solarium\QueryType\Update\Query\Document\Document;
 use FS\SolrBundle\Doctrine\Mapper\EntityMapper;
 use FS\SolrBundle\Doctrine\Mapper\Mapping\CommandFactory;
 use FS\SolrBundle\Doctrine\Mapper\MetaInformationFactory;
+use FS\SolrBundle\Doctrine\Mapper\MetaInformationInterface;
 use FS\SolrBundle\Event\ErrorEvent;
 use FS\SolrBundle\Event\Event;
 use FS\SolrBundle\Event\Events;
@@ -15,6 +14,7 @@ use FS\SolrBundle\Query\AbstractQuery;
 use FS\SolrBundle\Query\SolrQuery;
 use FS\SolrBundle\Repository\Repository;
 use Solarium\Client;
+use Solarium\QueryType\Update\Query\Document\Document;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -65,8 +65,7 @@ class Solr implements SolrInterface
         EventDispatcherInterface $manager,
         MetaInformationFactory $metaInformationFactory,
         EntityMapper $entityMapper
-    )
-    {
+    ) {
         $this->solrClientCore = $client;
         $this->commandFactory = $commandFactory;
         $this->eventManager = $manager;
@@ -116,7 +115,9 @@ class Solr implements SolrInterface
     {
         $metaInformation = $this->metaInformationFactory->loadInformation($entity);
         $class = $metaInformation->getClassName();
-        $entity = new $class;
+
+        $reflectionClass = new \ReflectionClass($class);
+        $entity = $reflectionClass->newInstanceWithoutConstructor();
 
         $query = new SolrQuery();
         $query->setSolr($this);
@@ -136,7 +137,8 @@ class Solr implements SolrInterface
         $metaInformation = $this->metaInformationFactory->loadInformation($entityAlias);
         $class = $metaInformation->getClassName();
 
-        $entity = new $class;
+        $reflectionClass = new \ReflectionClass($class);
+        $entity = $reflectionClass->newInstanceWithoutConstructor();
 
         $repositoryClass = $metaInformation->getRepository();
         if (class_exists($repositoryClass)) {
